@@ -38,7 +38,6 @@
     html[data-theme="retro"] { --bg: #1a002a; --ink: #00ffcc; --muted: #ff00ff; --accent: #ff00ff; --card-bg: #2d004d; --border: #00ffcc; --drag-bg: #4d0080; }
 
     /* Ajustes Mobile e Gutter de Rolagem */
-    /* Deixa 30px na direita exclusivos para rolagem touch para não arrastar itens sem querer */
     html, body { background: var(--bg); color: var(--ink); margin: 0; padding: 10px; padding-right: 30px; transition: background 0.3s, color 0.3s; -webkit-tap-highlight-color: transparent;}
     .page { max-width: var(--maxw); margin: 0 auto; background: var(--card-bg); padding: 14px; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: background 0.3s; position: relative;}
     
@@ -53,6 +52,11 @@
     body.focus-mode .btn-foco { background: transparent; color: var(--accent); box-shadow: 0 0 10px var(--accent); }
     .timer-box { background: var(--drag-bg); padding: 6px 10px; border-radius: 6px; font-weight: bold; color: var(--accent); display: flex; align-items: center; gap: 6px; border: 1px solid var(--border);}
     .timer-btn { background: transparent; border: none; cursor: pointer; color: var(--accent); font-size: 14px; padding: 0;}
+
+    /* ÍNDICE DINÂMICO */
+    #lista-indice { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
+    #lista-indice li a { color: var(--ink); text-decoration: none; font-size: 12px; background: var(--drag-bg); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); display: block;}
+    #lista-indice li a:hover { background: var(--accent); color: var(--bg); }
 
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; align-items: start; transition: all 0.3s ease; }
     .col { display: flex; flex-direction: column; gap: 12px; min-height: 100px; } 
@@ -69,9 +73,10 @@
     .small { font-size: 12px; font-weight: normal; }
     
     /* SECTIONS MINIMIZÁVEIS E DRAG */
-    .section { background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); transition: background 0.3s, opacity 0.2s; position: relative; overflow-x: auto; }
+    .section { background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); transition: background 0.3s, opacity 0.2s; position: relative; overflow-x: auto; scroll-margin-top: 20px;}
     .section-header { display: flex; align-items: center; border-bottom: 1px solid var(--border); margin-bottom: 10px; padding-bottom: 6px; gap: 8px;}
-    .section-header label { margin: 0; padding: 0; flex: 1; border: none; font-size: 14px;}
+    .section-header label { margin: 0; padding: 0; flex: 1; border: none; font-size: 14px; transition: color 0.2s;}
+    .section-header label:hover { color: var(--ink); }
     .drag-section-handle { cursor: grab; font-size: 16px; color: var(--muted); padding: 2px 6px; user-select: none; border-radius: 4px; }
     .drag-section-handle:active { cursor: grabbing; background: var(--drag-bg); }
     .section.collapsed .section-content { display: none !important; }
@@ -138,6 +143,7 @@
       body:not(.view-desktop) .flex-row { flex-direction: column; }
     }
 
+    /* MODO DE IMPRESSÃO - COMUM E TEMPLATE (SAMSUNG NOTES) */
     @media print {
       body, .page, .section, .tracker-box, html {
         -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
@@ -150,7 +156,15 @@
       input[type=text], select, input[type=date], input[type=time] { border: none; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent !important; }
       .page-break-print { page-break-before: always; }
       .no-print { display: none !important; }
-      .section.collapsed .section-content { display: block !important; } /* Imprime aberto */
+      .section.collapsed .section-content { display: block !important; } 
+    }
+
+    /* Regra ativada apenas quando clicamos no botão "Template Limpo" */
+    body.template-mode input::placeholder, 
+    body.template-mode textarea::placeholder, 
+    body.template-mode input[type=text], 
+    body.template-mode textarea {
+      color: transparent !important;
     }
   </style>
 </head>
@@ -198,6 +212,17 @@
         </select>
       </div>
     </header>
+
+    <div id="indice-container" class="hide-in-focus section" style="margin-top:16px;">
+        <div class="section-header" style="border-bottom:none; margin-bottom:0; padding-bottom:0;">
+            <span class="drag-section-handle" title="Arraste a seção">✥</span>
+            <label>📖 Índice Rápido</label>
+            <button class="collapse-btn" onclick="toggleSection(this)">➖</button>
+        </div>
+        <div class="section-content">
+            <ul id="lista-indice" style="margin-top: 10px;"></ul>
+        </div>
+    </div>
 
     <div style="margin-top:16px; display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;" class="section">
       <div class="section-header" style="width: 100%; margin-bottom: 0; padding-bottom: 0; border:none;">
@@ -525,6 +550,28 @@
           </div>
       </div>
     </div>
+    
+    <div class="section hide-in-focus" style="margin-top:16px;">
+        <div class="section-header">
+            <span class="drag-section-handle" title="Arraste a seção">✥</span>
+            <label>Doodling Livre 🎨</label>
+            <button class="collapse-btn" onclick="toggleSection(this)">➖</button>
+        </div>
+        <div class="section-content">
+            <div style="margin-bottom: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <label style="margin:0;">Tamanho: <input type="range" class="brush-size" min="1" max="20" value="3" style="width: 100px; display:inline-block; vertical-align:middle;"></label>
+              <label style="margin:0;">Pincel: 
+                <select class="brush-type" style="width: auto; padding: 4px;">
+                  <option value="round">Redondo</option>
+                  <option value="square">Quadrado</option>
+                </select>
+              </label>
+              <button class="ghost mini-add" onclick="limparCanvas(this)">Limpar Tela</button>
+              <button class="ghost mini-add" onclick="exportarCanvas(this)">Salvar (PNG)</button>
+            </div>
+            <canvas class="doodle-canvas" width="800" height="300" style="border: 2px dashed var(--border); border-radius: 8px; touch-action: none; background: transparent; width: 100%; max-width: 100%; display: block; cursor: crosshair;"></canvas>
+        </div>
+    </div>
 
     <div class="section hide-in-focus" style="margin-top:16px;">
       <div class="section-header">
@@ -533,6 +580,81 @@
           <button class="collapse-btn" onclick="toggleSection(this)">➖</button>
       </div>
       <div class="section-content tracker-grid" id="tracker-grid">
+
+        <div class="tracker-box">
+          <h4>🚿 Banho & Cuidados</h4>
+          <div class="field-group" style="margin-top: 10px;">
+            <label class="inline-cb"><input type="checkbox"/> Lavei o Cabelo</label>
+            <label class="inline-cb"><input type="checkbox"/> Depilação</label>
+          </div>
+          <div class="field-group" style="display:flex; gap:8px;">
+            <div style="flex:1"><label class="tiny-lbl">Horário</label><input type="time"/></div>
+            <div style="flex:1"><label class="tiny-lbl">Último banho</label><input type="date"/></div>
+          </div>
+          <div class="field-group">
+            <label class="tiny-lbl">Perfume do Dia</label>
+            <input type="text" placeholder="Qual a fragrância?"/>
+          </div>
+        </div>
+
+        <div class="tracker-box">
+          <h4>💼 Trabalho do Dia</h4>
+          <div class="field-group">
+            <label class="tiny-lbl">Foco Principal</label>
+            <select id="foco-trabalho" onchange="const out = this.nextElementSibling; out.style.display = this.value === 'Outro' ? 'block' : 'none'; autoSave();">
+              <option disabled selected>Selecione...</option>
+              <option>Tarot</option><option>RPG</option><option>Vídeos</option>
+              <option>Músicas</option><option>Criação de Jogos</option><option value="Outro">Outro...</option>
+            </select>
+            <input type="text" placeholder="Qual?" style="display:none; margin-top:4px;">
+          </div>
+          <div class="field-group">
+            <label class="tiny-lbl" style="display:flex; justify-content:space-between;">O que eu fiz? <button class="ghost mini-add" onclick="addGenericField(this, 'Descreva a tarefa...')">+</button></label>
+            <div class="dynamic-fields">
+               <div style="display:flex; gap:4px; margin-top:4px;"><input type="text" placeholder="Descreva a tarefa..." /><button class="xbtn" onclick="this.parentElement.remove(); autoSave();">✕</button></div>
+            </div>
+          </div>
+          <div class="field-group" style="margin-top: 8px;">
+            <label class="tiny-lbl">Tempo investido</label>
+            <input type="text" placeholder="Ex: 2h 30m"/>
+          </div>
+        </div>
+
+        <div class="tracker-box">
+          <h4>✒️ Poeminhas</h4>
+          <div class="field-group" style="display:flex; gap:8px; align-items:center;">
+            <button class="ghost mini-add" style="margin:0;" onclick="gerarPalavra(this)">Gerar Inspiração</button>
+            <span class="palavra-gerada" style="font-weight: bold; font-size: 11px; color: var(--accent);">---</span>
+          </div>
+          <div class="field-group">
+            <label class="tiny-lbl">Tema / Título</label>
+            <input type="text" placeholder="Sobre o que é?">
+          </div>
+          <div class="field-group">
+            <label class="tiny-lbl" style="display:flex; justify-content:space-between;">Versos <button class="ghost mini-add" onclick="addVersoField(this)">+</button></label>
+            <div class="dynamic-fields versos-container">
+               <div style="display:flex; gap:4px; margin-top:4px;">
+                 <input type="text" placeholder="Verso..." style="flex:3;">
+                 <select class="rima-select" onchange="analisarRimas(this)" style="flex:1; padding: 4px;"><option value="-">-</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+                 <button class="xbtn" onclick="const p = this.parentElement.parentElement; this.parentElement.remove(); analisarRimasContainer(p); autoSave();">✕</button>
+               </div>
+            </div>
+          </div>
+          <div class="field-group" style="margin-top: 8px;">
+            <label class="tiny-lbl">Esquema Rímico: <span class="analise-rima" style="font-weight:bold;">Nenhum</span></label>
+          </div>
+        </div>
+
+        <div class="tracker-box">
+          <h4>🧠 Consulta Rápida (Wiki)</h4>
+          <div class="field-group" style="display:flex; gap:4px;">
+            <input type="text" class="termo-ia" placeholder="O que deseja saber?" style="flex:1;">
+            <button class="ghost mini-add" style="margin:0; padding: 0 8px;" onclick="pesquisarAPI(this)">Buscar</button>
+          </div>
+          <div class="resultado-ia" style="margin-top: 8px; font-size: 11px; color: var(--muted); max-height: 120px; overflow-y: auto;">
+             Digite algo para buscar na base de conhecimento livre.
+          </div>
+        </div>
 
         <div class="tracker-box terapia-box">
           <h4>
@@ -707,6 +829,7 @@
       <div class="controls">
         <button onclick="printPlanner()">Imprimir (A4 Comum)</button>
         <button style="background: #2E7D32;" onclick="gerarPDFIninterrupto()">📥 Baixar PDF Ininterrupto</button>
+        <button class="ghost" onclick="gerarTemplatePDF()">📄 PDF (Template em Branco)</button>
       </div>
 
       <div class="controls">
@@ -748,6 +871,33 @@
     section.classList.toggle('collapsed');
     btn.innerText = section.classList.contains('collapsed') ? '➕' : '➖';
     autoSave();
+  }
+
+  /* ====== ATUALIZAÇÃO DO ÍNDICE DINÂMICO ====== */
+  function updateIndex() {
+    const indice = document.getElementById('lista-indice');
+    if(!indice) return;
+    indice.innerHTML = '';
+    const labels = document.querySelectorAll('.section-header label');
+    labels.forEach((lbl, i) => {
+        // Ignora o label do próprio índice para não ficar recursivo
+        if(lbl.innerText.includes("Índice Rápido")) return;
+
+        const sec = lbl.closest('.section');
+        if(!sec.id) sec.id = 'secao-' + i;
+        
+        // Transforma o título num botão de voltar
+        lbl.style.cursor = 'pointer';
+        lbl.title = "Voltar ao Índice";
+        lbl.onclick = () => { window.location.hash = '#indice-container'; };
+
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = '#' + sec.id;
+        a.innerText = lbl.innerText.replace('➖', '').replace('➕', '').replace('✥', '').trim();
+        li.appendChild(a);
+        indice.appendChild(li);
+    });
   }
 
   let pomodoroTimer; let timeLeft = 25 * 60; let isTimerRunning = false;
@@ -830,6 +980,55 @@
     autoSave();
   }
 
+  /* ====== LOGICA DO TRACKER DE POEMAS ====== */
+  const palavrasPoema = ["Saudade", "Caos", "Oceano", "Espelho", "Neblina", "Fogo", "Cicatriz", "Estrela", "Suspiro", "Tempo", "Sombra", "Labirinto", "Coração", "Ruína"];
+  function gerarPalavra(btn) {
+      const span = btn.closest('.field-group').querySelector('.palavra-gerada');
+      span.innerText = palavrasPoema[Math.floor(Math.random() * palavrasPoema.length)];
+      autoSave();
+  }
+  function addVersoField(btn) {
+      const container = btn.closest('.field-group').querySelector('.versos-container');
+      const div = document.createElement('div');
+      div.style.display = 'flex'; div.style.gap = '4px'; div.style.marginTop = '4px';
+      div.innerHTML = `<input type="text" placeholder="Verso..." style="flex:3;"><select class="rima-select" onchange="analisarRimas(this)" style="flex:1; padding: 4px;"><option value="-">-</option><option>A</option><option>B</option><option>C</option><option>D</option></select><button class="xbtn" onclick="const p = this.parentElement.parentElement; this.parentElement.remove(); analisarRimasContainer(p); autoSave();">✕</button>`;
+      container.appendChild(div);
+      autoSave();
+  }
+  function analisarRimas(select) { analisarRimasContainer(select.closest('.versos-container')); autoSave(); }
+  function analisarRimasContainer(container) {
+      if(!container) return;
+      const selects = container.querySelectorAll('.rima-select');
+      let esquema = Array.from(selects).map(s => s.value).filter(v => v !== '-').join('');
+      let tipo = "Misto / Sem padrão fixo";
+      if (esquema === "AABB") tipo = "Emparelhada (AABB)";
+      else if (esquema === "ABAB") tipo = "Cruzada/Alternada (ABAB)";
+      else if (esquema === "ABBA") tipo = "Abraçada (ABBA)";
+      else if (esquema === "") tipo = "Nenhum";
+      const resultSpan = container.closest('.tracker-box').querySelector('.analise-rima');
+      if(resultSpan) resultSpan.innerText = `${esquema} - ${tipo}`;
+  }
+
+  /* ====== LOGICA DA MINI IA (WIKIPEDIA) ====== */
+  async function pesquisarAPI(btn) {
+      const box = btn.closest('.tracker-box');
+      const termo = box.querySelector('.termo-ia').value;
+      const div = box.querySelector('.resultado-ia');
+      if (!termo) return;
+      
+      div.innerHTML = "<em>Buscando oráculos da internet...</em>";
+      try {
+          const url = `https://pt.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(termo)}&utf8=&format=json&origin=*`;
+          const resp = await fetch(url);
+          const dados = await resp.json();
+          
+          if (dados.query.search.length > 0) {
+              const res = dados.query.search[0];
+              div.innerHTML = `<strong>${res.title}:</strong> ${res.snippet}... <br><a href="https://pt.wikipedia.org/wiki/${encodeURIComponent(res.title)}" target="_blank" style="color:var(--accent); font-weight:bold;">Ler o resto</a>`;
+          } else { div.innerHTML = "A base de dados não encontrou nada sobre isso. 😔"; }
+      } catch (e) { div.innerHTML = "Erro de conexão."; }
+  }
+
   /* ====== DADOS DO TAROT E LAYOUT ====== */
   function changeViewMode(mode) { document.body.className = document.body.classList.contains('focus-mode') ? 'focus-mode' : ''; document.body.classList.add('view-' + mode); autoSave(); }
   const tarotDeck = ["--- Arcanos Maiores ---", "O Louco", "O Mago", "A Sacerdotisa", "A Imperatriz", "O Imperador", "O Hierofante", "Os Enamorados", "O Carro", "A Força", "O Eremita", "A Roda da Fortuna", "A Justiça", "O Enforcado", "A Morte", "A Temperança", "O Diabo", "A Torre", "A Estrela", "A Lua", "O Sol", "O Julgamento", "O Mundo", "--- Paus ---", ...[1,2,3,4,5,6,7,8,9,10,"Pajem","Cavaleiro","Rainha","Rei"].map(v=>`${v} de Paus`), "--- Copas ---", ...[1,2,3,4,5,6,7,8,9,10,"Pajem","Cavaleiro","Rainha","Rei"].map(v=>`${v} de Copas`), "--- Espadas ---", ...[1,2,3,4,5,6,7,8,9,10,"Pajem","Cavaleiro","Rainha","Rei"].map(v=>`${v} de Espadas`), "--- Ouros ---", ...[1,2,3,4,5,6,7,8,9,10,"Pajem","Cavaleiro","Rainha","Rei"].map(v=>`${v} de Ouros`)];
@@ -846,7 +1045,7 @@
     document.querySelectorAll('input[type="checkbox"]').forEach(el => { if(el.checked) el.setAttribute('checked', 'checked'); else el.removeAttribute('checked'); });
     document.querySelectorAll('select').forEach(el => { const opts = el.querySelectorAll('option'); opts.forEach(opt => opt.removeAttribute('selected')); if(el.selectedIndex >= 0) opts[el.selectedIndex].setAttribute('selected', 'selected'); });
   }
-  function autoSave() { syncToAttributes(); const plannerHtml = document.getElementById('planner').innerHTML; const theme = document.documentElement.getAttribute('data-theme') || 'creme'; const layout = document.getElementById('viewMode').value || 'auto'; localStorage.setItem('tdah_planner_save', JSON.stringify({ html: plannerHtml, theme: theme, layout: layout })); }
+  function autoSave() { syncToAttributes(); const plannerHtml = document.getElementById('planner').innerHTML; const theme = document.documentElement.getAttribute('data-theme') || 'creme'; const layout = document.getElementById('viewMode').value || 'auto'; localStorage.setItem('tdah_planner_save', JSON.stringify({ html: plannerHtml, theme: theme, layout: layout })); updateIndex(); }
   function loadData() {
     const saved = localStorage.getItem('tdah_planner_save');
     if(saved) { 
@@ -855,6 +1054,77 @@
       if(data.layout) { document.getElementById('viewMode').value = data.layout; changeViewMode(data.layout); } 
       if(document.getElementById('usableHours') && document.getElementById('usableHours').value) setUsableTimer();
     }
+  }
+
+  /* ====== SISTEMA DE DOODLING (CANVAS) ====== */
+  function initCanvas() {
+      const canvasList = document.querySelectorAll('.doodle-canvas');
+      canvasList.forEach(canvas => {
+          // Clona o canvas para remover os event listeners antigos em caso de reload
+          const clone = canvas.cloneNode(true);
+          canvas.parentNode.replaceChild(clone, canvas);
+          const newCanvas = clone;
+          const newCtx = newCanvas.getContext('2d');
+          let isDrawing = false;
+          
+          // Tenta puxar a cor principal do tema do seu css
+          const getLineColor = () => getComputedStyle(document.body).getPropertyValue('--ink') || 'black';
+
+          newCanvas.addEventListener('pointerdown', (e) => {
+              isDrawing = true;
+              newCtx.beginPath();
+              const rect = newCanvas.getBoundingClientRect();
+              const scaleX = newCanvas.width / rect.width;
+              const scaleY = newCanvas.height / rect.height;
+              newCtx.moveTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
+          });
+
+          newCanvas.addEventListener('pointermove', (e) => {
+              if (!isDrawing) return;
+              e.preventDefault(); // Impede de arrastar a tela no celular
+              
+              const wrapper = newCanvas.closest('.section-content');
+              const brushSize = wrapper.querySelector('.brush-size').value;
+              const brushType = wrapper.querySelector('.brush-type').value;
+              const pressure = e.pressure !== 0 ? e.pressure : 1; 
+              
+              newCtx.lineWidth = brushSize * pressure * 2;
+              newCtx.lineCap = brushType; 
+              newCtx.strokeStyle = getLineColor();
+              
+              const rect = newCanvas.getBoundingClientRect();
+              const scaleX = newCanvas.width / rect.width;
+              const scaleY = newCanvas.height / rect.height;
+              newCtx.lineTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
+              newCtx.stroke();
+          });
+
+          newCanvas.addEventListener('pointerup', () => { isDrawing = false; newCanvas.setAttribute('data-saved-image', newCanvas.toDataURL()); autoSave(); });
+          newCanvas.addEventListener('pointerout', () => { isDrawing = false; });
+          
+          // Se houver desenho salvo no atributo de dados, ele recarrega na tela
+          if(newCanvas.getAttribute('data-saved-image')) {
+              const img = new Image();
+              img.onload = () => newCtx.drawImage(img, 0, 0);
+              img.src = newCanvas.getAttribute('data-saved-image');
+          }
+      });
+  }
+
+  function limparCanvas(btn) { 
+      const canvas = btn.closest('.section-content').querySelector('.doodle-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height); 
+      canvas.removeAttribute('data-saved-image');
+      autoSave();
+  }
+  
+  function exportarCanvas(btn) {
+      const canvas = btn.closest('.section-content').querySelector('.doodle-canvas');
+      const link = document.createElement('a');
+      link.download = 'meu-doodle.png';
+      link.href = canvas.toDataURL('image/png'); 
+      link.click();
   }
 
   /* ====== DRAG AND DROP (ROws & Sections) ====== */
@@ -993,6 +1263,18 @@
 
   /* ====== IMPRESSÃO, PDF E BACKUP ====== */
   function printPlanner() { window.print(); }
+  
+  function gerarTemplatePDF() {
+      // Adiciona a classe que apaga visualmente textos e placeholders
+      document.body.classList.add('template-mode');
+      // Espera 1 segundo para a renderização e abre o menu de impressão
+      setTimeout(() => {
+          window.print();
+          // Remove a classe logo depois para voltar ao normal no PC
+          setTimeout(() => document.body.classList.remove('template-mode'), 1000);
+      }, 500);
+  }
+
   function gerarPDFIninterrupto() { const elemento = document.getElementById('planner'); const alturaPx = elemento.scrollHeight; const larguraPx = elemento.scrollWidth; const alturaMm = alturaPx * 0.264583; const larguraMm = larguraPx * 0.264583; const opcoes = { margin: 5, filename: 'Meu_Planner_TDAH_Continuo.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: [larguraMm + 10, alturaMm + 10], orientation: 'portrait' } }; const botoes = document.querySelectorAll('button, .controls, .theme-select, .backup-area, .drag-section-handle'); botoes.forEach(b => b.style.visibility = 'hidden'); html2pdf().set(opcoes).from(elemento).save().then(() => { botoes.forEach(b => b.style.visibility = 'visible'); }); }
 
   function renderBackups() { const backups = JSON.parse(localStorage.getItem('tdah_backups') || '[]'); const list = document.getElementById('backup-list'); list.innerHTML = ''; if (backups.length === 0) { list.innerHTML = '<div class="tiny-lbl">Nenhum backup salvo ainda.</div>'; return; } backups.forEach((bkp, index) => { const div = document.createElement('div'); div.className = 'backup-item'; div.innerHTML = `<span>📅 ${bkp.date}</span> <button class="ghost mini-add" onclick="viewBackup(${index})">👁️ Visualizar</button>`; list.appendChild(div); }); }
@@ -1103,7 +1385,7 @@
     }
     else { loadData(); populateTarotSelects(); }
     
-    makeSortable(); renderBackups(); initSparkles();
+    makeSortable(); renderBackups(); initSparkles(); initCanvas(); updateIndex();
     document.getElementById('planner').addEventListener('input', autoSave);
     document.getElementById('planner').addEventListener('change', autoSave);
   });
